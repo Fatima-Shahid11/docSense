@@ -1,52 +1,24 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { askGemini } from "@/lib/gemini";
 
 export default function ChatBox({ docText, docName }) {
   const { user } = useAuth();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [listening, setListening] = useState(false);
   const [voiceOutput, setVoiceOutput] = useState(false);
   const messagesEndRef = useRef(null);
-  const recognitionRef = useRef(null);
+
+  // Clear messages when document changes
+  useEffect(() => {
+    setMessages([]);
+  }, [docName]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
-    const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = "en-US";
-    recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      setInput((prev) => (prev ? prev + " " + transcript : transcript));
-      setListening(false);
-    };
-    recognition.onerror = () => setListening(false);
-    recognition.onend = () => setListening(false);
-    recognitionRef.current = recognition;
-  }, []);
-
-  const toggleVoiceInput = () => {
-    if (!recognitionRef.current) {
-      alert("Voice input not supported in this browser. Try Chrome.");
-      return;
-    }
-    if (listening) {
-      recognitionRef.current.stop();
-      setListening(false);
-    } else {
-      recognitionRef.current.start();
-      setListening(true);
-    }
-  };
 
   const speakAnswer = (text) => {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
@@ -59,21 +31,12 @@ export default function ChatBox({ docText, docName }) {
   const sendMessage = async () => {
     const question = input.trim();
     if (!question) return;
-    if (!docText) {
-      alert("Please upload a document first.");
-      return;
-    }
+    if (!docText) return;
     setInput("");
     setMessages((prev) => [...prev, { role: "user", content: question }]);
     setLoading(true);
     try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question, docText, docName, userId: user?.uid }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Request failed");
+      const data = await askGemini(question, docText, docName);
       const aiMessage = {
         role: "assistant",
         content: data.answer,
@@ -99,6 +62,9 @@ export default function ChatBox({ docText, docName }) {
     }
   };
 
+  const hasDoc = !!docText;
+  const inputDisabled = loading || !hasDoc;
+
   return (
     <div className="bg-white rounded-2xl shadow-lg shadow-teal-100 flex flex-col h-[600px] border border-teal-100">
       <div className="px-4 py-3 border-b border-teal-100 flex items-center justify-between gap-2">
@@ -123,9 +89,9 @@ export default function ChatBox({ docText, docName }) {
       <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-teal-50/30">
         {messages.length === 0 && (
           <div className="text-center text-slate-500 mt-12">
-            {docName ? (
+            {hasDoc ? (
               <>
-                <div className="text-4xl mb-2">💭</div>
+                <div className="flex justify-center mb-2"><svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-teal-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
                 <p className="text-sm font-medium text-slate-600">
                   Ask anything about <strong className="text-teal-700">{docName}</strong>
                 </p>
@@ -134,7 +100,12 @@ export default function ChatBox({ docText, docName }) {
             ) : (
               <>
                 <div className="text-4xl mb-2">📤</div>
-                <p className="text-sm font-medium text-slate-600">Upload a document to start asking questions</p>
+                <p className="text-sm font-medium text-slate-600">
+                  Upload or select a document to start
+                </p>
+                <p className="text-xs mt-2 text-slate-400">
+                  Your saved documents appear on the left
+                </p>
               </>
             )}
           </div>
@@ -158,7 +129,7 @@ export default function ChatBox({ docText, docName }) {
                 <div className={`text-xs mt-2 pt-2 border-t font-semibold ${
                   msg.role === "user" ? "border-white/30 opacity-90" : "border-teal-100 text-teal-600"
                 }`}>
-                  📎 {msg.citation}
+                  Source: {msg.citation}
                 </div>
               )}
               {msg.confidence !== undefined && !msg.error && (
@@ -175,8 +146,8 @@ export default function ChatBox({ docText, docName }) {
             <div className="bg-white border border-teal-200 text-slate-500 rounded-2xl px-4 py-2.5 text-sm">
               <span className="inline-flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 bg-teal-500 rounded-full animate-bounce"></span>
-                <span className="w-1.5 h-1.5 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></span>
-                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></span>
+                <span className="w-1.5 h-1.5 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: "0.15s" }}></span>
+                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: "0.3s" }}></span>
               </span>
             </div>
           </div>
@@ -187,33 +158,19 @@ export default function ChatBox({ docText, docName }) {
 
       <div className="p-3 border-t border-teal-100 bg-white rounded-b-2xl">
         <div className="flex gap-2 items-stretch">
-          <button
-            onClick={toggleVoiceInput}
-            disabled={loading}
-            type="button"
-            className={`cursor-pointer disabled:cursor-not-allowed px-3 rounded-xl border transition shrink-0 flex items-center justify-center ${
-              listening
-                ? "bg-red-500 text-white border-red-500 animate-pulse"
-                : "bg-white text-teal-600 hover:bg-teal-50 hover:text-teal-700 border-teal-300"
-            }`}
-            aria-label={listening ? "Stop voice input" : "Start voice input"}
-            title={listening ? "Stop listening" : "Click to speak"}
-          >
-            🎤
-          </button>
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={listening ? "Listening..." : "Ask a question..."}
-            disabled={loading}
+            placeholder={hasDoc ? "Ask a question..." : "Upload or select a document first"}
+            disabled={inputDisabled}
             rows={1}
-            className="flex-1 resize-none border border-teal-200 bg-white rounded-xl px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-500 disabled:bg-slate-50 disabled:text-slate-400 text-sm transition"
+            className="flex-1 resize-none border border-teal-200 bg-white rounded-xl px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-500 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed text-sm transition"
             aria-label="Question input"
           />
           <button
             onClick={sendMessage}
-            disabled={loading || !input.trim()}
+            disabled={inputDisabled || !input.trim()}
             type="button"
             className="cursor-pointer disabled:cursor-not-allowed bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 disabled:from-slate-300 disabled:to-slate-300 text-white px-5 rounded-xl font-semibold transition shrink-0 text-sm flex items-center justify-center"
           >

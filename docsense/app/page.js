@@ -28,7 +28,7 @@ export default function Home() {
             DocSense
           </h1>
           <p className="text-slate-600 text-sm mb-8 font-medium">
-            AI-powered document Q&A with voice accessibility
+            AI-powered document Q&A. Private, fast, and secure.
           </p>
 
           <button
@@ -45,12 +45,6 @@ export default function Home() {
             </svg>
             Sign in with Google
           </button>
-
-          <div className="mt-8 pt-6 border-t border-teal-100 text-xs text-slate-600 space-y-1.5 font-medium">
-            <div>✨ Documents stay private to your account</div>
-            <div>🎤 Voice input and output for accessibility</div>
-            <div>🛡️ AI safety filters and source citations</div>
-          </div>
         </div>
       </main>
     );
