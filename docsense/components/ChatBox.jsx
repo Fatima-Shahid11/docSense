@@ -10,8 +10,8 @@ export default function ChatBox({ docText, docName }) {
   const [loading, setLoading] = useState(false);
   const [voiceOutput, setVoiceOutput] = useState(false);
   const messagesEndRef = useRef(null);
+  const textareaRef = useRef(null);
 
-  // Clear messages when document changes
   useEffect(() => {
     setMessages([]);
   }, [docName]);
@@ -30,9 +30,9 @@ export default function ChatBox({ docText, docName }) {
 
   const sendMessage = async () => {
     const question = input.trim();
-    if (!question) return;
-    if (!docText) return;
+    if (!question || !docText || loading) return;
     setInput("");
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
     setMessages((prev) => [...prev, { role: "user", content: question }]);
     setLoading(true);
     try {
@@ -62,55 +62,101 @@ export default function ChatBox({ docText, docName }) {
     }
   };
 
+  const handleInput = (e) => {
+    setInput(e.target.value);
+    e.target.style.height = "auto";
+    e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
+  };
+
   const hasDoc = !!docText;
-  const inputDisabled = loading || !hasDoc;
+  const canSend = !loading && hasDoc && input.trim().length > 0;
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg shadow-teal-100 flex flex-col h-[600px] border border-teal-100">
-      <div className="px-4 py-3 border-b border-teal-100 flex items-center justify-between gap-2">
-        <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-          <span className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-lg flex items-center justify-center shadow-md shadow-cyan-200">
-            <span className="text-base">💬</span>
-          </span>
-          Ask Questions
-        </h2>
-        <label className="flex items-center gap-1.5 text-xs text-slate-600 select-none cursor-pointer font-medium">
-          <input
-            type="checkbox"
-            checked={voiceOutput}
-            onChange={(e) => setVoiceOutput(e.target.checked)}
-            className="w-3.5 h-3.5 accent-teal-600 cursor-pointer"
-            aria-label="Enable voice output"
-          />
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
-            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
-          </svg> 
-          Speak answers
-        </label>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-teal-50/30">
-        {messages.length === 0 && (
-          <div className="text-center text-slate-500 mt-12">
-            {hasDoc ? (
+    <div className="flex flex-col h-full bg-slate-950">
+      {/* Chat header */}
+      <div className="shrink-0 h-14 flex items-center justify-between px-5 border-b border-slate-800/80 bg-slate-950">
+        <div className="flex items-center gap-2.5 min-w-0">
+          {hasDoc ? (
+            <>
+              <div className="w-2 h-2 bg-emerald-400 rounded-full shadow-lg shadow-emerald-400/50 shrink-0" />
+              <span className="text-base font-semibold text-slate-200 truncate">{docName}</span>
+            </>
+          ) : (
+            <>
+              <div className="w-2 h-2 bg-slate-700 rounded-full shrink-0" />
+              <span className="text-base text-slate-500">No document selected</span>
+            </>
+          )}
+        </div>
+        {/* Voice toggle */}
+        <button
+          type="button"
+          onClick={() => setVoiceOutput((v) => !v)}
+          className={`flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg transition-all border ${
+            voiceOutput
+              ? "text-indigo-300 bg-indigo-500/10 border-indigo-500/30"
+              : "text-slate-500 bg-transparent border-slate-700/60 hover:border-slate-600 hover:text-slate-400"
+          }`}
+          aria-label={voiceOutput ? "Disable voice output" : "Enable voice output"}
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            {voiceOutput ? (
               <>
-                <div className="flex justify-center mb-2"><svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-teal-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-                <p className="text-sm font-medium text-slate-600">
-                  Ask anything about <strong className="text-teal-700">{docName}</strong>
-                </p>
-                <p className="text-xs mt-2 text-slate-400">Try: "What is this document about?"</p>
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
               </>
             ) : (
               <>
-                <div className="text-4xl mb-2">📤</div>
-                <p className="text-sm font-medium text-slate-600">
-                  Upload or select a document to start
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <line x1="23" y1="9" x2="17" y2="15" />
+                <line x1="17" y1="9" x2="23" y2="15" />
+              </>
+            )}
+          </svg>
+          {voiceOutput ? "Voice on" : "Voice off"}
+        </button>
+      </div>
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4">
+        {messages.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-full text-center pb-16">
+            {hasDoc ? (
+              <>
+                <div className="w-14 h-14 rounded-2xl bg-slate-800/80 border border-slate-700/50 flex items-center justify-center mb-4">
+                  <svg className="w-7 h-7 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
+                  </svg>
+                </div>
+                <p className="text-base font-semibold text-slate-300 mb-1">
+                  Ask anything about this document
                 </p>
-                <p className="text-xs mt-2 text-slate-400">
-                  Your saved documents appear on the left
+                <p className="text-sm text-slate-600 mb-6">
+                  Powered by Gemini AI
                 </p>
+                <div className="flex flex-wrap gap-2 justify-center max-w-sm">
+                  {["What is this document about?", "Summarize the key points", "What are the main conclusions?"].map((q) => (
+                    <button
+                      key={q}
+                      type="button"
+                      onClick={() => { setInput(q); textareaRef.current?.focus(); }}
+                      className="text-sm text-slate-400 hover:text-indigo-300 border border-slate-700 hover:border-indigo-500/40 hover:bg-indigo-500/5 rounded-lg px-3 py-1.5 transition-all"
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="w-14 h-14 rounded-2xl bg-slate-800/80 border border-slate-700/50 flex items-center justify-center mb-4">
+                  <svg className="w-7 h-7 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                  </svg>
+                </div>
+                <p className="text-base font-semibold text-slate-400 mb-1">No document selected</p>
+                <p className="text-sm text-slate-600">Upload or select a document from the sidebar</p>
               </>
             )}
           </div>
@@ -118,42 +164,65 @@ export default function ChatBox({ docText, docName }) {
 
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-            <div
-              className={`max-w-[85%] rounded-2xl px-4 py-2.5 break-words ${
-                msg.role === "user"
-                  ? "bg-gradient-to-br from-teal-600 to-cyan-600 text-white rounded-br-sm"
-                  : msg.error
-                  ? "bg-red-50 text-red-900 border border-red-200 rounded-bl-sm"
-                  : "bg-white text-slate-800 border border-teal-200 rounded-bl-sm"
-              }`}
-            >
-              <div className="whitespace-pre-wrap break-words text-sm leading-relaxed">
-                {msg.error && "⚠️ "}{msg.content}
+            {msg.role === "assistant" && (
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shrink-0 mr-2.5 mt-0.5 shadow shadow-indigo-900/60">
+                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+                </svg>
               </div>
-              {msg.citation && (
-                <div className={`text-xs mt-2 pt-2 border-t font-semibold ${
-                  msg.role === "user" ? "border-white/30 opacity-90" : "border-teal-100 text-teal-600"
-                }`}>
-                  Source: {msg.citation}
-                </div>
-              )}
-              {msg.confidence !== undefined && !msg.error && (
-                <div className={`text-xs mt-1 ${msg.role === "user" ? "opacity-75" : "text-slate-400"}`}>
-                  Confidence: {Math.round(msg.confidence * 100)}%
-                </div>
-              )}
+            )}
+            <div className={`max-w-[75%] ${msg.role === "user" ? "order-first" : ""}`}>
+              <div
+                className={`rounded-2xl px-4 py-3 text-base leading-relaxed break-words ${
+                  msg.role === "user"
+                    ? "bg-gradient-to-br from-violet-600 to-indigo-600 text-white rounded-tr-sm shadow-lg shadow-indigo-900/40"
+                    : msg.error
+                    ? "bg-red-500/10 text-red-300 border border-red-500/20 rounded-tl-sm"
+                    : "bg-slate-800 text-slate-100 border border-slate-700/50 rounded-tl-sm"
+                }`}
+              >
+                <p className="whitespace-pre-wrap">{msg.content}</p>
+                {msg.citation && (
+                  <div className={`mt-2.5 pt-2.5 border-t text-sm font-medium flex items-center gap-1.5 ${
+                    msg.role === "user" ? "border-white/20 text-indigo-200" : "border-slate-700 text-slate-500"
+                  }`}>
+                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" />
+                    </svg>
+                    {msg.citation}
+                  </div>
+                )}
+                {msg.confidence !== undefined && msg.confidence < 1 && !msg.error && (
+                  <div className={`mt-1.5 text-sm ${msg.role === "user" ? "text-indigo-200/70" : "text-slate-600"}`}>
+                    {Math.round(msg.confidence * 100)}% confidence
+                  </div>
+                )}
+              </div>
             </div>
+            {msg.role === "user" && (
+              <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 ml-2.5 mt-0.5 ring-2 ring-indigo-500/20">
+                <img
+                  src={user?.photoURL}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+            )}
           </div>
         ))}
 
         {loading && (
           <div className="flex justify-start">
-            <div className="bg-white border border-teal-200 text-slate-500 rounded-2xl px-4 py-2.5 text-sm">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 bg-teal-500 rounded-full animate-bounce"></span>
-                <span className="w-1.5 h-1.5 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: "0.15s" }}></span>
-                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: "0.3s" }}></span>
-              </span>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shrink-0 mr-2.5 mt-0.5 shadow shadow-indigo-900/60">
+              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+              </svg>
+            </div>
+            <div className="bg-slate-800 border border-slate-700/50 rounded-2xl rounded-tl-sm px-4 py-3.5 flex items-center gap-1.5">
+              <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+              <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+              <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
             </div>
           </div>
         )}
@@ -161,27 +230,36 @@ export default function ChatBox({ docText, docName }) {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="p-3 border-t border-teal-100 bg-white rounded-b-2xl">
-        <div className="flex gap-2 items-stretch">
+      {/* Input area */}
+      <div className="shrink-0 p-4 border-t border-slate-800/80 bg-slate-950">
+        <div className="flex items-end gap-2 bg-slate-800/80 border border-slate-700/50 rounded-2xl px-3 py-2.5 focus-within:border-indigo-500/50 transition-colors">
           <textarea
+            ref={textareaRef}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={handleInput}
             onKeyDown={handleKeyDown}
-            placeholder={hasDoc ? "Ask a question..." : "Upload or select a document first"}
-            disabled={inputDisabled}
+            placeholder={hasDoc ? `Ask about ${docName}...` : "Select a document to start asking questions"}
+            disabled={!hasDoc || loading}
             rows={1}
-            className="flex-1 resize-none border border-teal-200 bg-white rounded-xl px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-500 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed text-sm transition"
+            className="flex-1 resize-none bg-transparent text-base text-slate-200 placeholder-slate-600 focus:outline-none disabled:cursor-not-allowed leading-relaxed py-0.5 max-h-[120px] overflow-y-auto pl-2"
             aria-label="Question input"
+            style={{ height: "auto" }}
           />
           <button
             onClick={sendMessage}
-            disabled={inputDisabled || !input.trim()}
+            disabled={!canSend}
             type="button"
-            className="cursor-pointer disabled:cursor-not-allowed bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 disabled:from-slate-300 disabled:to-slate-300 text-white px-5 rounded-xl font-semibold transition shrink-0 text-sm flex items-center justify-center"
+            className="shrink-0 w-9 h-9 flex items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:from-slate-700 disabled:to-slate-700 disabled:text-slate-600 text-white transition-all shadow shadow-indigo-900/40 disabled:shadow-none"
+            aria-label="Send message"
           >
-            Send
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+            </svg>
           </button>
         </div>
+        <p className="text-sm text-slate-700 mt-2 text-center">
+          Enter to send · Shift+Enter for new line
+        </p>
       </div>
     </div>
   );

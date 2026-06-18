@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 html, body {
-  min-height: 100vh;
+  height: 100%;
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
@@ -18,11 +18,26 @@ button:disabled {
 }
 
 *:focus-visible {
-  outline: 2px solid #0d9488;
+  outline: 2px solid #6366f1;
   outline-offset: 2px;
   border-radius: 4px;
 }
 
 *:focus:not(:focus-visible) {
   outline: none;
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
 }
