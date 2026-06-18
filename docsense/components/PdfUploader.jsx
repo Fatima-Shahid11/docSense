@@ -52,8 +52,11 @@ export default function PdfUploader({ docText, docName, setDocText, setDocName }
         setError("This PDF appears to be scanned (image-based). Try a text-based PDF.");
         return;
       }
-      await saveDocument(user.uid, file.name, trimmed);
-      setDocText(trimmed);
+      // Firestore document limit is ~1MB; truncate extracted text if needed
+      const maxChars = 900_000;
+      const finalText = trimmed.length > maxChars ? trimmed.slice(0, maxChars) : trimmed;
+      await saveDocument(user.uid, file.name, finalText);
+      setDocText(finalText);
       setDocName(file.name);
       await loadDocs();
     } catch (err) {
@@ -69,7 +72,7 @@ export default function PdfUploader({ docText, docName, setDocText, setDocName }
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.type !== "application/pdf") return setError("Please upload a PDF file.");
-    if (file.size > 1 * 1024 * 1024) return setError("File too large. Max 1 MB.");
+    if (file.size > 10 * 1024 * 1024) return setError("File too large. Max 10 MB.");
     extractPdfText(file);
   };
 
@@ -136,7 +139,7 @@ export default function PdfUploader({ docText, docName, setDocText, setDocName }
             </div>
             <div>
               <p className="text-sm font-semibold text-slate-300 group-hover:text-indigo-300 transition-colors">Upload PDF</p>
-              <p className="text-sm text-slate-600 mt-0.5">Max 1 MB · Text-based only</p>
+              <p className="text-sm text-slate-600 mt-0.5">Max 10 MB · Text-based only</p>
             </div>
           </div>
         )}
