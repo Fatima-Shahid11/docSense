@@ -18,7 +18,11 @@ export default function ChatBox({ docText, docName }) {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messages.at(-1)?.role === "assistant") {
+      textareaRef.current?.focus();
+    }
   }, [messages]);
+
 
   const speakAnswer = (text) => {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
