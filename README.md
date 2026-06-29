@@ -2,8 +2,6 @@
 
 AI-powered document Q&A with built-in voice accessibility. Sign in with Google, upload your documents, and ask questions by text or voice.
 
-**Live demo:** [docsense-rag.vercel.app](https://docsense-rag.vercel.app/)
-
 ## Features
 
 - **Google Sign-In**: Secure authentication powered by Firebase Auth
