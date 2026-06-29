@@ -1,33 +1,34 @@
-# DocSense 📄🎙️
+# DocSense
 
-> AI-powered document Q&A with built-in voice accessibility. Ask questions about your documents and hear answers back.
+AI-powered document Q&A with built-in voice accessibility. Sign in with Google, upload your documents, and ask questions by text or voice.
 
-🔗 **Live demo:** [docsense-rag.vercel.app](https://docsense-rag.vercel.app/)
+**Live demo:** [docsense-rag.vercel.app](https://docsense-rag.vercel.app/)
 
-## ✨ Features
+## Features
 
-- 📤 **Upload and chat with documents**: Drop in a PDF and ask anything about its content
-- 🎙️ **Voice accessibility**: Ask questions by voice and listen to answers, making documents accessible to visually impaired users and hands-free workflows
-- 🧠 **RAG-powered answers**: Retrieval-Augmented Generation grounds every response in your actual document, not hallucinated content
-- ⚡ **Fast, streaming responses**: Answers stream in token by token
-- 🎨 **Clean, responsive UI**: Works on desktop and mobile
+- **Google Sign-In**: Secure authentication powered by Firebase Auth
+- **Upload and chat with documents**: Drop in a PDF and ask anything about its content
+- **Voice accessibility**: Ask questions by voice and listen to answers, making documents accessible to visually impaired users and hands-free workflows
+- **RAG-powered answers**: Retrieval-Augmented Generation grounds every response in your actual document, not hallucinated content
+- **Fast, streaming responses**: Answers stream in token by token
+- **Clean, responsive UI**: Works on desktop and mobile
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Framework:** Next.js (App Router)
 - **Language:** JavaScript
-- **LLM:** <OpenAI GPT-4o mini / Groq / etc.>
-- **Embeddings + Vector Store:** <e.g. OpenAI embeddings + Pinecone / Supabase pgvector>
-- **Document parsing:** <pdf-parse / LangChain loaders>
+- **Auth & Backend:** Firebase (Google Authentication, Firestore)
+- **LLM:** Google Gemini
 - **Voice:** Web Speech API (speech to text and text to speech)
 - **Deployment:** Vercel
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 - Node.js 18+
 - npm or yarn
-- API keys for your LLM and vector store
+- A Firebase project with Google Auth enabled
+- A Google Gemini API key
 
 ### Installation
 
@@ -40,8 +41,16 @@ cp .env.example .env.local
 
 Add your keys to `.env.local`:
 ```env
-OPENAI_API_KEY=your_key_here
-# Add any other keys (vector DB, etc.)
+# Firebase
+NEXT_PUBLIC_FIREBASE_API_KEY=your_key_here
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_bucket
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+
+# LLM
+NEXT_PUBLIC_GEMINI_API_KEY=your_key_here
 ```
 
 ### Run locally
@@ -51,13 +60,11 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-## 🧠 How It Works
+## How It Works
 
-1. **Upload**: User uploads a PDF
-2. **Parse and chunk**: Document is split into overlapping chunks
-3. **Embed and store**: Each chunk is embedded and saved to the vector store
+1. **Sign in**: User signs in with Google via Firebase Auth
+2. **Upload**: User uploads a PDF
+3. **Parse and chunk**: Document is split into overlapping chunks
 4. **Ask**: User asks a question (typed or spoken)
-5. **Retrieve**: Most relevant chunks are pulled from the vector store
-6. **Answer**: Retrieved context plus question are sent to the LLM, and the response is streamed back (and optionally read aloud)
-
-## 📂 Project Structure
+5. **Retrieve**: Most relevant chunks are pulled as context
+6. **Answer**: Context plus question are sent to Gemini, and the response is streamed back (and optionally read aloud)
