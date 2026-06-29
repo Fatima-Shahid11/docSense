@@ -1,20 +1,19 @@
 # DocSense
 
-AI-powered document Q&A with built-in voice accessibility. Sign in with Google, upload your documents, and ask questions by text or voice.
+AI-powered document Q&A with built-in voice accessibility. Sign in with Google, upload your documents, and ask questions in the chatbox.
 
 ## Features
 
 - **Google Sign-In**: Secure authentication powered by Firebase Auth
 - **Upload and chat with documents**: Drop in a PDF and ask anything about its content
-- **Voice accessibility**: Ask questions by voice and listen to answers, making documents accessible to visually impaired users and hands-free workflows
-- **RAG-powered answers**: Retrieval-Augmented Generation grounds every response in your actual document, not hallucinated content
+- **Voice accessibility**: Users can read or listen to the answers
+- **RAG-powered answers**: Retrieval-Augmented Generation grounds every response in your actual document
 - **Fast, streaming responses**: Answers stream in token by token
 - **Clean, responsive UI**: Works on desktop and mobile
 
 ## Tech Stack
 
 - **Framework:** Next.js (App Router)
-- **Language:** JavaScript
 - **Auth & Backend:** Firebase (Google Authentication, Firestore)
 - **LLM:** Google Gemini
 - **Voice:** Web Speech API (speech to text and text to speech)
